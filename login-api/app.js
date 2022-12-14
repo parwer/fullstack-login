@@ -38,16 +38,18 @@ app.post("/login", jsonParser, (req, res) => {
     connection.execute(
         "SELECT * FROM user WHERE username=?",
         [req.body.username],
-        (err, user, fields) => {
+        (err, users, fields) => {
             if (err) {
                 res.json({ status: "error", massage: err });
+                return
             }
-            if (err) {
+            if (users.length == 0) {
                 res.json({ status: "error", massage: "not found user" });
+                return
             }
-            bcrypt.compare(req.body.password, user[0].password, (err, isLogin) => {
+            bcrypt.compare(req.body.password, users[0].password, (err, isLogin) => {
                 if (isLogin) {
-                    const token = jwt.sign({ username: user[0].username }, secret, {
+                    const token = jwt.sign({ username: users[0].username }, secret, {
                         expiresIn: "1h",
                     });
                     res.json({ status: "Ok", massage: "login success", token });
@@ -63,7 +65,7 @@ app.post("/authen", jsonParser, (req, res) => {
     try {
         const token = req.headers.authorization.slice(8, -1);
         const decoded = jwt.verify(token, secret);
-        res.json({ decoded });
+        res.json({ decoded, status:"Ok" });
     } catch (err) {
         res.json({status: "err", massage: err})
     }
